@@ -391,28 +391,39 @@ def download_settings(title, fig, purpose, finding):
             figure_height = st.slider("Figure height", 600, 1400, 950, step=50)
 
         try:
-            jpg = create_custom_jpg(
-                fig=fig,
-                title=title,
-                purpose=purpose,
-                finding=finding,
-                include_title=include_title,
-                include_figure=include_figure,
-                include_purpose=include_purpose,
-                include_finding=include_finding,
-                title_size=title_size,
-                purpose_size=purpose_size,
-                finding_size=finding_size,
-                figure_width=figure_width,
-                figure_height=figure_height,
-            )
+           jpg = create_custom_jpg(
+    fig=fig,
+    title=title,
+    purpose=purpose,
+    finding=finding,
+    include_title=include_title,
+    include_figure=include_figure,
+    include_purpose=include_purpose,
+    include_finding=include_finding,
+    title_size=title_size,
+    purpose_size=purpose_size,
+    finding_size=finding_size,
+    figure_width=figure_width,
+    figure_height=figure_height,
+)
 
-            st.download_button(
-                label="Download JPG",
-                data=jpg,
-                file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
-                mime="image/jpeg",
-            )
+st.markdown("### Preview")
+
+preview_img = Image.open(jpg)
+
+st.image(
+    preview_img,
+    use_container_width=True
+)
+
+jpg.seek(0)
+
+st.download_button(
+    label="Download JPG",
+    data=jpg,
+    file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
+    mime="image/jpeg",
+)
 
         except Exception as e:
             st.error("JPG download failed. Check that kaleido==0.2.1 and pillow are in requirements.txt.")
