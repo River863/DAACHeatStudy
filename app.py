@@ -206,7 +206,7 @@ def create_download_jpg(fig, title):
 
     width = 1700
     padding = 50
-    title_font = load_font(76, bold=True)
+    title_font = load_font(130, bold=True)
 
     temp_img = Image.new("RGB", (width, 400), "white")
     temp_draw = ImageDraw.Draw(temp_img)
@@ -256,11 +256,11 @@ def show_figure(title, fig, purpose, finding):
     st.markdown("### What this figure shows")
     st.write(purpose)
 
-    st.markdown("### Key Findings / Why This Figure Is Important")
-    st.write(finding)
-
     fig = style_figure(fig)
     st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("### Key Findings / Why This Figure Is Important")
+    st.write(finding)
 
     try:
         jpg = create_download_jpg(fig, title)
