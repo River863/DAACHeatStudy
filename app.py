@@ -203,24 +203,29 @@ def create_download_jpg(fig, title):
 
     chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
     chart = chart.resize((1600, 950))
-
-    width = 1700
-    padding = 50
+#for the title font size 
+    width = 2200
+    padding = 60
     title_font = load_font(130, bold=True)
 
     temp_img = Image.new("RGB", (width, 400), "white")
     temp_draw = ImageDraw.Draw(temp_img)
 
     y = padding
-    y = draw_wrapped_text(
-        temp_draw,
-        title,
-        padding,
-        y,
-        title_font,
-        width - 2 * padding,
-        line_spacing=14,
-    )
+   final_draw.text(
+    (padding, y),
+    title,
+    font=title_font,
+    fill="black"
+)
+
+bbox = final_draw.textbbox(
+    (padding, y),
+    title,
+    font=title_font
+)
+
+y += (bbox[3] - bbox[1]) + 50
 
     total_height = y + 45 + chart.height + padding
 
