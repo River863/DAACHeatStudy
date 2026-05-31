@@ -224,13 +224,35 @@ def show_figure(title, fig, purpose, finding):
     try:
         jpg = create_download_jpg(fig, title)
 
-        st.download_button(
-            label="Download Figure as JPG",
-            data=jpg,
-            file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
-            mime="image/jpeg",
-        )
+        # Color version
+download_type = st.radio(
+    "Download Style",
+    ["Color", "Black & White"],
+    horizontal=True
+)
 
+if download_type == "Color":
+    download_fig = fig
+
+else:
+    download_fig = fig.full_copy()
+
+    for trace in download_fig.data:
+
+        if hasattr(trace, "marker"):
+            trace.marker.color = "gray"
+
+        if hasattr(trace, "line"):
+            trace.line.color = "black"
+
+jpg = create_download_jpg(download_fig, title)
+
+st.download_button(
+    label=f"Download {download_type} Figure",
+    data=jpg,
+    file_name=title.replace(" ", "_").replace("/", "_") + f"_{download_type}.jpg",
+    mime="image/jpeg",
+)
     except Exception as e:
         st.error("JPG download failed.")
         st.caption(str(e))
