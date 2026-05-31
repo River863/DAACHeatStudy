@@ -195,48 +195,13 @@ def create_download_jpg(fig, title):
     )
 
     chart_bytes = fig.to_image(
-        format="png",
+        format="jpg",
         width=1800,
         height=1000,
         scale=2,
     )
 
-    chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
-    chart = chart.resize((1800, 1000))
-
-    width = 1900
-    padding = 60
-    title_font = load_font(130, bold=True)
-
-    temp_img = Image.new("RGB", (width, 600), "white")
-    temp_draw = ImageDraw.Draw(temp_img)
-
-    title_bbox = temp_draw.textbbox((0, 0), title, font=title_font)
-    title_height = title_bbox[3] - title_bbox[1]
-
-    total_height = padding + title_height + 70 + chart.height + padding
-
-    final_img = Image.new("RGB", (width, total_height), "white")
-    final_draw = ImageDraw.Draw(final_img)
-
-    title_bbox = final_draw.textbbox((0, 0), title, font=title_font)
-    title_width = title_bbox[2] - title_bbox[0]
-
-    title_x = (width - title_width) // 2
-    title_y = padding
-
-    final_draw.text(
-        (title_x, title_y),
-        title,
-        font=title_font,
-        fill="black"
-    )
-
-    chart_y = padding + title_height + 70
-    final_img.paste(chart, (padding, chart_y))
-
-    output = BytesIO()
-    final_img.save(output, format="JPEG", quality=95)
+    output = BytesIO(chart_bytes)
     output.seek(0)
 
     return output
