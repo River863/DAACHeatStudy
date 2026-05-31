@@ -378,7 +378,7 @@ def download_settings(title, fig, purpose, finding):
             include_finding = st.checkbox("Include key findings", value=False)
 
         with col2:
-            title_size = st.slider("Title size", 24, 90, 60)
+            title_size = st.slider("Title size", 24, 100, 70)
             purpose_size = st.slider("Description size", 16, 45, 24)
             finding_size = st.slider("Key findings size", 16, 45, 24)
 
@@ -391,44 +391,38 @@ def download_settings(title, fig, purpose, finding):
             figure_height = st.slider("Figure height", 600, 1400, 950, step=50)
 
         try:
-           jpg = create_custom_jpg(
-    fig=fig,
-    title=title,
-    purpose=purpose,
-    finding=finding,
-    include_title=include_title,
-    include_figure=include_figure,
-    include_purpose=include_purpose,
-    include_finding=include_finding,
-    title_size=title_size,
-    purpose_size=purpose_size,
-    finding_size=finding_size,
-    figure_width=figure_width,
-    figure_height=figure_height,
-)
+            jpg = create_custom_jpg(
+                fig=fig,
+                title=title,
+                purpose=purpose,
+                finding=finding,
+                include_title=include_title,
+                include_figure=include_figure,
+                include_purpose=include_purpose,
+                include_finding=include_finding,
+                title_size=title_size,
+                purpose_size=purpose_size,
+                finding_size=finding_size,
+                figure_width=figure_width,
+                figure_height=figure_height,
+            )
 
-st.markdown("### Preview")
+            st.markdown("### Preview")
+            preview_img = Image.open(jpg)
+            st.image(preview_img, use_container_width=True)
 
-preview_img = Image.open(jpg)
+            jpg.seek(0)
 
-st.image(
-    preview_img,
-    use_container_width=True
-)
-
-jpg.seek(0)
-
-st.download_button(
-    label="Download JPG",
-    data=jpg,
-    file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
-    mime="image/jpeg",
-)
+            st.download_button(
+                label="Download JPG",
+                data=jpg,
+                file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
+                mime="image/jpeg",
+            )
 
         except Exception as e:
             st.error("JPG download failed. Check that kaleido==0.2.1 and pillow are in requirements.txt.")
             st.caption(str(e))
-
 
 def show_figure(title, fig, purpose, finding):
     st.markdown(
