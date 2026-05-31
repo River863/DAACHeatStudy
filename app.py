@@ -1,4 +1,3 @@
-import textwrap
 from io import BytesIO
 
 import pandas as pd
@@ -117,10 +116,10 @@ long_df = long_df.dropna(subset=["surface", "surface_temp"])
 # -----------------------------
 def style_figure(fig):
     fig.update_layout(
-        title=None,
+        title=dict(text=""),
         font=dict(size=15),
         legend_title_text="Surface Type",
-        margin=dict(t=40, b=80),
+        margin=dict(t=20, b=80),
         hovermode="closest"
     )
     fig.update_xaxes(title_font=dict(size=16), tickfont=dict(size=13))
@@ -203,10 +202,14 @@ def create_download_jpg(fig, title, finding):
     )
 
     y += 30
-    chart_y = y
     y += chart.height + 40
 
-    temp_draw.text((padding, y), "Key Findings / Why This Figure Is Important", font=heading_font, fill="black")
+    temp_draw.text(
+        (padding, y),
+        "Key Findings / Why This Figure Is Important",
+        font=heading_font,
+        fill="black"
+    )
     y += 45
 
     y = draw_wrapped_text(
@@ -238,7 +241,12 @@ def create_download_jpg(fig, title, finding):
     final_img.paste(chart, (padding, y))
     y += chart.height + 40
 
-    final_draw.text((padding, y), "Key Findings / Why This Figure Is Important", font=heading_font, fill="black")
+    final_draw.text(
+        (padding, y),
+        "Key Findings / Why This Figure Is Important",
+        font=heading_font,
+        fill="black"
+    )
     y += 45
 
     draw_wrapped_text(
