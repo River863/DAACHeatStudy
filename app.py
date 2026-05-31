@@ -11,7 +11,6 @@ st.set_page_config(page_title="DAAC Heat Study", layout="wide")
 st.title("DAAC Heat Study Dashboard")
 st.write("Upload your CSV or Excel file to view surface temperature figures.")
 
-
 uploaded_file = st.file_uploader("Upload CSV or Excel file", type=["csv", "xlsx", "xls"])
 
 if uploaded_file is None:
@@ -19,9 +18,6 @@ if uploaded_file is None:
     st.stop()
 
 
-# -----------------------------
-# Load data
-# -----------------------------
 if uploaded_file.name.endswith(".csv"):
     df = pd.read_csv(uploaded_file)
 else:
@@ -31,9 +27,6 @@ st.success("Data loaded successfully!")
 st.dataframe(df.head())
 
 
-# -----------------------------
-# Clean data
-# -----------------------------
 df.columns = (
     df.columns
     .str.strip()
@@ -116,9 +109,6 @@ long_df["surface"] = long_df["surface"].map(surface_names)
 long_df = long_df.dropna(subset=["surface", "surface_temp"])
 
 
-# -----------------------------
-# Helper functions
-# -----------------------------
 def style_figure(fig):
     fig.update_layout(
         title=dict(text=""),
@@ -176,6 +166,7 @@ def draw_wrapped_text(draw, text, x, y, font, max_width, line_spacing=10, fill="
     for word in words:
         test_line = current_line + " " + word if current_line else word
         bbox = draw.textbbox((0, 0), test_line, font=font)
+
         if bbox[2] - bbox[0] <= max_width:
             current_line = test_line
         else:
@@ -194,235 +185,67 @@ def draw_wrapped_text(draw, text, x, y, font, max_width, line_spacing=10, fill="
     return y
 
 
-def create_custom_jpg(
-    fig,
-    title,
-    purpose,
-    finding,
-    include_title=True,
-    include_figure=True,
-    include_purpose=False,
-    include_finding=True,
-    title_size=56,
-    purpose_size=24,
-    finding_size=24,
-    figure_width=1500,
-    figure_height=900,
-):
+def create_download_jpg(fig, title):
     fig = style_figure(fig)
 
     fig.update_layout(
-        width=figure_width,
-        height=figure_height,
+        width=1600,
+        height=950,
         margin=dict(t=30, b=230, l=90, r=50),
     )
 
-    width = figure_width + 100
+    chart_bytes = fig.to_image(
+        format="png",
+        width=1600,
+        height=950,
+        scale=2,
+    )
+
+    chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
+    chart = chart.resize((1600, 950))
+
+    width = 1700
     padding = 50
-    section_gap = 35
+    title_font = load_font(76, bold=True)
 
-    title_font = load_font(title_size, bold=True)
-    heading_font = load_font(max(24, finding_size + 4), bold=True)
-    purpose_font = load_font(purpose_size, bold=False)
-    finding_font = load_font(finding_size, bold=False)
-
-    chart = None
-    if include_figure:
-        chart_bytes = fig.to_image(
-            format="png",
-            width=figure_width,
-            height=figure_height,
-            scale=2,
-        )
-        chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
-        chart = chart.resize((figure_width, figure_height))
-
-    temp_img = Image.new("RGB", (width, 4000), "white")
+    temp_img = Image.new("RGB", (width, 400), "white")
     temp_draw = ImageDraw.Draw(temp_img)
 
     y = padding
+    y = draw_wrapped_text(
+        temp_draw,
+        title,
+        padding,
+        y,
+        title_font,
+        width - 2 * padding,
+        line_spacing=14,
+    )
 
-    if include_title:
-        y = draw_wrapped_text(
-            temp_draw,
-            title,
-            padding,
-            y,
-            title_font,
-            width - 2 * padding,
-            line_spacing=14,
-        )
-        y += section_gap
+    total_height = y + 45 + chart.height + padding
 
-    if include_purpose:
-        temp_draw.text(
-            (padding, y),
-            "What this figure shows",
-            font=heading_font,
-            fill="black",
-        )
-        y += heading_font.size + 15
-
-        y = draw_wrapped_text(
-            temp_draw,
-            purpose,
-            padding,
-            y,
-            purpose_font,
-            width - 2 * padding,
-            line_spacing=12,
-        )
-        y += section_gap
-
-    if include_figure and chart is not None:
-        y += figure_height + section_gap
-
-    if include_finding:
-        temp_draw.text(
-            (padding, y),
-            "Key Findings / Why This Figure Is Important",
-            font=heading_font,
-            fill="black",
-        )
-        y += heading_font.size + 15
-
-        y = draw_wrapped_text(
-            temp_draw,
-            finding,
-            padding,
-            y,
-            finding_font,
-            width - 2 * padding,
-            line_spacing=12,
-        )
-        y += section_gap
-
-    final_height = max(y + padding, 300)
-
-    final_img = Image.new("RGB", (width, final_height), "white")
+    final_img = Image.new("RGB", (width, total_height), "white")
     final_draw = ImageDraw.Draw(final_img)
 
     y = padding
+    y = draw_wrapped_text(
+        final_draw,
+        title,
+        padding,
+        y,
+        title_font,
+        width - 2 * padding,
+        line_spacing=14,
+    )
 
-    if include_title:
-        y = draw_wrapped_text(
-            final_draw,
-            title,
-            padding,
-            y,
-            title_font,
-            width - 2 * padding,
-            line_spacing=14,
-        )
-        y += section_gap
-
-    if include_purpose:
-        final_draw.text(
-            (padding, y),
-            "What this figure shows",
-            font=heading_font,
-            fill="black",
-        )
-        y += heading_font.size + 15
-
-        y = draw_wrapped_text(
-            final_draw,
-            purpose,
-            padding,
-            y,
-            purpose_font,
-            width - 2 * padding,
-            line_spacing=12,
-        )
-        y += section_gap
-
-    if include_figure and chart is not None:
-        final_img.paste(chart, (padding, y))
-        y += figure_height + section_gap
-
-    if include_finding:
-        final_draw.text(
-            (padding, y),
-            "Key Findings / Why This Figure Is Important",
-            font=heading_font,
-            fill="black",
-        )
-        y += heading_font.size + 15
-
-        draw_wrapped_text(
-            final_draw,
-            finding,
-            padding,
-            y,
-            finding_font,
-            width - 2 * padding,
-            line_spacing=12,
-        )
+    y += 45
+    final_img.paste(chart, (padding, y))
 
     output = BytesIO()
     final_img.save(output, format="JPEG", quality=95)
     output.seek(0)
     return output
 
-
-def download_settings(title, fig, purpose, finding):
-    with st.expander("Customize Download", expanded=False):
-        st.write("Choose what you want included in the downloaded JPG.")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            include_title = st.checkbox("Include title", value=True)
-            include_figure = st.checkbox("Include figure", value=True)
-            include_purpose = st.checkbox("Include what this figure shows", value=False)
-            include_finding = st.checkbox("Include key findings", value=False)
-
-        with col2:
-            title_size = st.slider("Title size", 24, 100, 70)
-            purpose_size = st.slider("Description size", 16, 45, 24)
-            finding_size = st.slider("Key findings size", 16, 45, 24)
-
-        col3, col4 = st.columns(2)
-
-        with col3:
-            figure_width = st.slider("Figure width", 1000, 2200, 1600, step=100)
-
-        with col4:
-            figure_height = st.slider("Figure height", 600, 1400, 950, step=50)
-
-        try:
-            jpg = create_custom_jpg(
-                fig=fig,
-                title=title,
-                purpose=purpose,
-                finding=finding,
-                include_title=include_title,
-                include_figure=include_figure,
-                include_purpose=include_purpose,
-                include_finding=include_finding,
-                title_size=title_size,
-                purpose_size=purpose_size,
-                finding_size=finding_size,
-                figure_width=figure_width,
-                figure_height=figure_height,
-            )
-
-            st.markdown("### Preview")
-            preview_img = Image.open(jpg)
-            st.image(preview_img, use_container_width=True)
-
-            jpg.seek(0)
-
-            st.download_button(
-                label="Download JPG",
-                data=jpg,
-                file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
-                mime="image/jpeg",
-            )
-
-        except Exception as e:
-            st.error("JPG download failed. Check that kaleido==0.2.1 and pillow are in requirements.txt.")
-            st.caption(str(e))
 
 def show_figure(title, fig, purpose, finding):
     st.markdown(
@@ -439,12 +262,21 @@ def show_figure(title, fig, purpose, finding):
     fig = style_figure(fig)
     st.plotly_chart(fig, use_container_width=True)
 
-    download_settings(title, fig, purpose, finding)
+    try:
+        jpg = create_download_jpg(fig, title)
+
+        st.download_button(
+            label="Download Figure as JPG",
+            data=jpg,
+            file_name=title.replace(" ", "_").replace("/", "_") + ".jpg",
+            mime="image/jpeg",
+        )
+
+    except Exception as e:
+        st.error("JPG download failed.")
+        st.caption(str(e))
 
 
-# -----------------------------
-# Figure selector
-# -----------------------------
 figure_choice = st.selectbox(
     "Choose a figure",
     [
@@ -455,9 +287,6 @@ figure_choice = st.selectbox(
 )
 
 
-# -----------------------------
-# Figure 1
-# -----------------------------
 if figure_choice == "1. Average Surface Temperature Bar Chart":
     title = "Average Surface Temperature Bar Chart"
 
@@ -498,9 +327,6 @@ if figure_choice == "1. Average Surface Temperature Bar Chart":
     show_figure(title, fig, purpose, finding)
 
 
-# -----------------------------
-# Figure 2
-# -----------------------------
 elif figure_choice == "2. Surface Temperature by Time of Day":
     title = "Surface Temperature by Time of Day"
 
@@ -554,9 +380,6 @@ elif figure_choice == "2. Surface Temperature by Time of Day":
     show_figure(title, fig, purpose, finding)
 
 
-# -----------------------------
-# Figure 3
-# -----------------------------
 elif figure_choice == "3. Temperature Spread by Surface":
     title = "Temperature Spread by Surface"
 
