@@ -189,68 +189,57 @@ def create_download_jpg(fig, title):
     fig = style_figure(fig)
 
     fig.update_layout(
-        width=1600,
-        height=950,
-        margin=dict(t=30, b=230, l=90, r=50),
+        width=1800,
+        height=1000,
+        margin=dict(t=30, b=260, l=100, r=60),
     )
 
     chart_bytes = fig.to_image(
         format="png",
-        width=1600,
-        height=950,
+        width=1800,
+        height=1000,
         scale=2,
     )
 
     chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
-    chart = chart.resize((1600, 950))
-#for the title font size 
-    width = 2200
+    chart = chart.resize((1800, 1000))
+
+    width = 1900
     padding = 60
     title_font = load_font(130, bold=True)
 
-    temp_img = Image.new("RGB", (width, 400), "white")
+    temp_img = Image.new("RGB", (width, 600), "white")
     temp_draw = ImageDraw.Draw(temp_img)
 
-    y = padding
-   final_draw.text(
-    (padding, y),
-    title,
-    font=title_font,
-    fill="black"
-)
+    title_bbox = temp_draw.textbbox((0, 0), title, font=title_font)
+    title_height = title_bbox[3] - title_bbox[1]
 
-bbox = final_draw.textbbox(
-    (padding, y),
-    title,
-    font=title_font
-)
-
-y += (bbox[3] - bbox[1]) + 50
-
-    total_height = y + 45 + chart.height + padding
+    total_height = padding + title_height + 70 + chart.height + padding
 
     final_img = Image.new("RGB", (width, total_height), "white")
     final_draw = ImageDraw.Draw(final_img)
 
-    y = padding
-    y = draw_wrapped_text(
-        final_draw,
+    title_bbox = final_draw.textbbox((0, 0), title, font=title_font)
+    title_width = title_bbox[2] - title_bbox[0]
+
+    title_x = (width - title_width) // 2
+    title_y = padding
+
+    final_draw.text(
+        (title_x, title_y),
         title,
-        padding,
-        y,
-        title_font,
-        width - 2 * padding,
-        line_spacing=14,
+        font=title_font,
+        fill="black"
     )
 
-    y += 45
-    final_img.paste(chart, (padding, y))
+    chart_y = padding + title_height + 70
+    final_img.paste(chart, (padding, chart_y))
 
     output = BytesIO()
     final_img.save(output, format="JPEG", quality=95)
     output.seek(0)
-    return output
 
+    return output
 
 def show_figure(title, fig, purpose, finding):
     st.markdown(
