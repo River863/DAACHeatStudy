@@ -173,95 +173,71 @@ def draw_wrapped_text(draw, text, x, y, font, max_width, line_spacing=10, fill="
     return y
 
 
-def create_download_jpg(fig, title, finding):
+def create_download_jpg(fig, title):
     fig = style_figure(fig)
 
-    chart_bytes = fig.to_image(format="png", width=1200, height=700, scale=2)
+    chart_bytes = fig.to_image(
+        format="png",
+        width=1200,
+        height=700,
+        scale=2
+    )
+
     chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
     chart = chart.resize((1200, 700))
 
     width = 1300
     padding = 50
 
-    title_font = load_font(40, bold=True)
-    heading_font = load_font(28, bold=True)
-    body_font = load_font(24, bold=False)
+    title_font = load_font(44, bold=True)
 
-    temp_img = Image.new("RGB", (width, 2000), "white")
+    temp_img = Image.new("RGB", (width, 300), "white")
     temp_draw = ImageDraw.Draw(temp_img)
 
-    y = padding
-    y = draw_wrapped_text(
-        temp_draw,
-        title,
-        padding,
-        y,
-        title_font,
-        width - 2 * padding,
-        line_spacing=12
+    bbox = temp_draw.textbbox((0, 0), title, font=title_font)
+
+    title_height = bbox[3] - bbox[1]
+
+    total_height = (
+        padding
+        + title_height
+        + 30
+        + chart.height
+        + padding
     )
 
-    y += 30
-    y += chart.height + 40
+    final_img = Image.new(
+        "RGB",
+        (width, total_height),
+        "white"
+    )
 
-    temp_draw.text(
-        (padding, y),
-        "Key Findings / Why This Figure Is Important",
-        font=heading_font,
+    draw = ImageDraw.Draw(final_img)
+
+    draw.text(
+        (padding, padding),
+        title,
+        font=title_font,
         fill="black"
     )
-    y += 45
 
-    y = draw_wrapped_text(
-        temp_draw,
-        finding,
-        padding,
-        y,
-        body_font,
-        width - 2 * padding,
-        line_spacing=12
-    )
+    chart_y = padding + title_height + 30
 
-    final_height = y + padding
-    final_img = Image.new("RGB", (width, final_height), "white")
-    final_draw = ImageDraw.Draw(final_img)
-
-    y = padding
-    y = draw_wrapped_text(
-        final_draw,
-        title,
-        padding,
-        y,
-        title_font,
-        width - 2 * padding,
-        line_spacing=12
-    )
-
-    y += 30
-    final_img.paste(chart, (padding, y))
-    y += chart.height + 40
-
-    final_draw.text(
-        (padding, y),
-        "Key Findings / Why This Figure Is Important",
-        font=heading_font,
-        fill="black"
-    )
-    y += 45
-
-    draw_wrapped_text(
-        final_draw,
-        finding,
-        padding,
-        y,
-        body_font,
-        width - 2 * padding,
-        line_spacing=12
+    final_img.paste(
+        chart,
+        (padding, chart_y)
     )
 
     output = BytesIO()
-    final_img.save(output, format="JPEG", quality=95)
+
+    final_img.save(
+        output,
+        format="JPEG",
+        quality=95
+    )
+
     output.seek(0)
+
     return output
 
 
@@ -278,7 +254,7 @@ def show_figure(title, fig, purpose, finding):
     st.plotly_chart(fig, use_container_width=True)
 
     try:
-        jpg = create_download_jpg(fig, title, finding)
+        jpg = create_download_jpg(fig, title)
         st.download_button(
             label="Download full figure as JPG",
             data=jpg,
