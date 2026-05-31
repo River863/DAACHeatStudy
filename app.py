@@ -119,13 +119,25 @@ def style_figure(fig):
         title=dict(text=""),
         font=dict(size=15),
         legend_title_text="Surface Type",
-        margin=dict(t=20, b=80),
-        hovermode="closest"
+        margin=dict(t=20, b=170),
+        hovermode="closest",
+        height=750
     )
-    fig.update_xaxes(title_font=dict(size=16), tickfont=dict(size=13))
-    fig.update_yaxes(title_font=dict(size=16), tickfont=dict(size=13))
-    return fig
 
+    fig.update_xaxes(
+        title_font=dict(size=16),
+        tickfont=dict(size=12),
+        tickangle=0,
+        automargin=True
+    )
+
+    fig.update_yaxes(
+        title_font=dict(size=16),
+        tickfont=dict(size=13),
+        automargin=True
+    )
+
+    return fig
 
 def top_bottom_text(data, value_col):
     top = data.loc[data[value_col].idxmax()]
@@ -176,52 +188,49 @@ def draw_wrapped_text(draw, text, x, y, font, max_width, line_spacing=10, fill="
 def create_download_jpg(fig, title):
     fig = style_figure(fig)
 
+    fig.update_layout(
+        width=1500,
+        height=900,
+        margin=dict(t=30, b=220, l=90, r=50)
+    )
+
     chart_bytes = fig.to_image(
         format="png",
-        width=1200,
-        height=700,
+        width=1500,
+        height=900,
         scale=2
     )
 
     chart = Image.open(BytesIO(chart_bytes)).convert("RGB")
-    chart = chart.resize((1200, 700))
+    chart = chart.resize((1500, 900))
 
-    width = 1300
+    width = 1600
     padding = 50
 
-    title_font = load_font(44, bold=True)
+    title_font = load_font(64, bold=True)
 
     temp_img = Image.new("RGB", (width, 300), "white")
     temp_draw = ImageDraw.Draw(temp_img)
 
     bbox = temp_draw.textbbox((0, 0), title, font=title_font)
-
+    title_width = bbox[2] - bbox[0]
     title_height = bbox[3] - bbox[1]
 
-    total_height = (
-        padding
-        + title_height
-        + 30
-        + chart.height
-        + padding
-    )
+    total_height = padding + title_height + 40 + chart.height + padding
 
-    final_img = Image.new(
-        "RGB",
-        (width, total_height),
-        "white"
-    )
-
+    final_img = Image.new("RGB", (width, total_height), "white")
     draw = ImageDraw.Draw(final_img)
 
+    title_x = (width - title_width) // 2
+
     draw.text(
-        (padding, padding),
+        (title_x, padding),
         title,
         font=title_font,
         fill="black"
     )
 
-    chart_y = padding + title_height + 30
+    chart_y = padding + title_height + 40
 
     final_img.paste(
         chart,
@@ -229,13 +238,7 @@ def create_download_jpg(fig, title):
     )
 
     output = BytesIO()
-
-    final_img.save(
-        output,
-        format="JPEG",
-        quality=95
-    )
-
+    final_img.save(output, format="JPEG", quality=95)
     output.seek(0)
 
     return output
@@ -303,7 +306,6 @@ if figure_choice == "1. Average Surface Temperature Bar Chart":
     )
 
     fig.update_traces(texttemplate="%{text:.1f}°F", textposition="outside")
-    fig.update_layout(xaxis_tickangle=-35)
 
     top, bottom = top_bottom_text(summary, "surface_temp")
     difference = top["surface_temp"] - bottom["surface_temp"]
@@ -396,7 +398,6 @@ elif figure_choice == "3. Temperature Spread by Surface":
         }
     )
 
-    fig.update_layout(xaxis_tickangle=-35)
 
     spread = (
         long_df.groupby("surface")["surface_temp"]
