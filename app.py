@@ -3,7 +3,6 @@ from io import BytesIO
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
 
 
 st.set_page_config(page_title="DAAC Heat Study", layout="wide")
@@ -141,51 +140,7 @@ def top_bottom_text(data, value_col):
     return top, bottom
 
 
-def load_font(size, bold=False):
-    font_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-        if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
-        if bold else "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-    ]
-
-    for path in font_paths:
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            pass
-
-    return ImageFont.load_default()
-
-
-def draw_wrapped_text(draw, text, x, y, font, max_width, line_spacing=10, fill="black"):
-    words = str(text).split()
-    lines = []
-    current_line = ""
-
-    for word in words:
-        test_line = current_line + " " + word if current_line else word
-        bbox = draw.textbbox((0, 0), test_line, font=font)
-
-        if bbox[2] - bbox[0] <= max_width:
-            current_line = test_line
-        else:
-            if current_line:
-                lines.append(current_line)
-            current_line = word
-
-    if current_line:
-        lines.append(current_line)
-
-    for line in lines:
-        draw.text((x, y), line, font=font, fill=fill)
-        bbox = draw.textbbox((0, 0), line, font=font)
-        y += (bbox[3] - bbox[1]) + line_spacing
-
-    return y
-
-
-def create_download_jpg(fig, title):
+def create_download_jpg(fig, black_and_white=False):
     fig = style_figure(fig)
 
     fig.update_layout(
@@ -193,6 +148,24 @@ def create_download_jpg(fig, title):
         height=1000,
         margin=dict(t=30, b=260, l=100, r=60),
     )
+
+    if black_and_white:
+        fig.update_layout(
+            colorway=[
+                "#000000",
+                "#333333",
+                "#666666",
+                "#888888",
+                "#AAAAAA",
+                "#CCCCCC",
+            ]
+        )
+
+        for trace in fig.data:
+            if hasattr(trace, "marker"):
+                trace.marker.color = None
+            if hasattr(trace, "line"):
+                trace.line.color = "black"
 
     chart_bytes = fig.to_image(
         format="jpg",
@@ -203,8 +176,8 @@ def create_download_jpg(fig, title):
 
     output = BytesIO(chart_bytes)
     output.seek(0)
-
     return output
+
 
 def show_figure(title, fig, purpose, finding):
     st.markdown(
@@ -222,37 +195,28 @@ def show_figure(title, fig, purpose, finding):
     st.write(finding)
 
     try:
-        jpg = create_download_jpg(fig, title)
+        download_type = st.radio(
+            "Download Style",
+            ["Color", "Black & White"],
+            horizontal=True,
+        )
 
-        # Color version
-download_type = st.radio(
-    "Download Style",
-    ["Color", "Black & White"],
-    horizontal=True
-)
+        black_and_white = download_type == "Black & White"
 
-if download_type == "Color":
-    download_fig = fig
+        jpg = create_download_jpg(
+            fig,
+            black_and_white=black_and_white,
+        )
 
-else:
-    download_fig = fig.full_copy()
+        file_style = "BW" if black_and_white else "COLOR"
 
-    for trace in download_fig.data:
+        st.download_button(
+            label=f"Download {download_type} Figure",
+            data=jpg,
+            file_name=title.replace(" ", "_").replace("/", "_") + f"_{file_style}.jpg",
+            mime="image/jpeg",
+        )
 
-        if hasattr(trace, "marker"):
-            trace.marker.color = "gray"
-
-        if hasattr(trace, "line"):
-            trace.line.color = "black"
-
-jpg = create_download_jpg(download_fig, title)
-
-st.download_button(
-    label=f"Download {download_type} Figure",
-    data=jpg,
-    file_name=title.replace(" ", "_").replace("/", "_") + f"_{download_type}.jpg",
-    mime="image/jpeg",
-)
     except Exception as e:
         st.error("JPG download failed.")
         st.caption(str(e))
